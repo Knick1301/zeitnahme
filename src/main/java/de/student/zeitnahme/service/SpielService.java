@@ -3,6 +3,7 @@ package de.student.zeitnahme.service;
 import de.student.zeitnahme.dto.*;
 import de.student.zeitnahme.entity.*;
 import de.student.zeitnahme.repository.*;
+import de.student.zeitnahme.websocket.GameSocketHandler;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,19 +19,22 @@ public class SpielService {
     private final PenaltyTypeRepository penaltyTypeRepository;
     private final GameEventRepository gameEventRepository;
     private final ActivePenaltyRepository activePenaltyRepository;
+    private final GameSocketHandler gameSocketHandler;
 
     public SpielService(SpielRepository spielRepository,
-                         TeamRepository teamRepository,
-                         PlayerRepository playerRepository,
-                         PenaltyTypeRepository penaltyTypeRepository,
-                         GameEventRepository gameEventRepository,
-                         ActivePenaltyRepository activePenaltyRepository) {
+                        TeamRepository teamRepository,
+                        PlayerRepository playerRepository,
+                        PenaltyTypeRepository penaltyTypeRepository,
+                        GameEventRepository gameEventRepository,
+                        ActivePenaltyRepository activePenaltyRepository,
+                        GameSocketHandler gameSocketHandler) {
         this.spielRepository = spielRepository;
         this.teamRepository = teamRepository;
         this.playerRepository = playerRepository;
         this.penaltyTypeRepository = penaltyTypeRepository;
         this.gameEventRepository = gameEventRepository;
         this.activePenaltyRepository = activePenaltyRepository;
+        this.gameSocketHandler = gameSocketHandler;
     }
 
     @Transactional
@@ -73,7 +77,7 @@ public class SpielService {
 
         gameEventRepository.save(event);
         spielRepository.save(spiel);
-        return toDto(spiel);
+        return toDtoUndBroadcasten(spiel);
     }
 
     @Transactional
@@ -92,8 +96,6 @@ public class SpielService {
         setzeSpieler(event, req.playerId(), req.spielerNameFreitext(), req.spielerNummerFreitext());
         gameEventRepository.save(event);
 
-        // Nur bei Zeitstrafen (dauerSekunden > 0) einen laufenden Countdown anlegen -
-        // eine Matchstrafe (0 Sekunden) landet nur im Protokoll, blinkt aber nirgends runter.
         if (penaltyType.getDauerSekunden() > 0) {
             ActivePenalty aktiv = new ActivePenalty();
             aktiv.setSpiel(spiel);
@@ -107,7 +109,7 @@ public class SpielService {
             activePenaltyRepository.save(aktiv);
         }
 
-        return toDto(spiel);
+        return toDtoUndBroadcasten(spiel);
     }
 
     @Transactional
@@ -118,7 +120,7 @@ public class SpielService {
         }
         spiel.setLaeuft(true);
         spielRepository.save(spiel);
-        return toDto(spiel);
+        return toDtoUndBroadcasten(spiel);
     }
 
     @Transactional
@@ -126,7 +128,7 @@ public class SpielService {
         Spiel spiel = findSpiel(spielId);
         spiel.setLaeuft(false);
         spielRepository.save(spiel);
-        return toDto(spiel);
+        return toDtoUndBroadcasten(spiel);
     }
 
     @Transactional
@@ -139,10 +141,8 @@ public class SpielService {
                         : spiel.getHalbzeitDauerSekunden()
         );
         spielRepository.save(spiel);
-        return toDto(spiel);
+        return toDtoUndBroadcasten(spiel);
     }
-
-    // --- Hilfsmethoden ---
 
     private Spiel findSpiel(Long spielId) {
         return spielRepository.findById(spielId)
@@ -168,11 +168,14 @@ public class SpielService {
         }
     }
 
-    // Sehr einfache Naeherung fuer jetzt: verstrichene Zeit der aktuellen
-    // Halbzeit. Reicht fuers Protokoll; kann spaeter verfeinert werden
-    // (z.B. inkl. vorheriger Halbzeiten), wenn's gebraucht wird.
     private int verstricheneSekunden(Spiel spiel) {
         return spiel.getHalbzeitDauerSekunden() - spiel.getRestzeitSekunden();
+    }
+
+    private SpielStateDTO toDtoUndBroadcasten(Spiel spiel) {
+        SpielStateDTO dto = toDto(spiel);
+        gameSocketHandler.broadcast(spiel.getId(), dto);
+        return dto;
     }
 
     private SpielStateDTO toDto(Spiel spiel) {
