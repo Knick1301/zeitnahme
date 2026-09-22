@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/spiele")
-@CrossOrigin(origins = "*") // fuers lokale Netz voellig ausreichend, keine oeffentliche API
+@CrossOrigin(origins = "*")
 public class SpielController {
 
     private final SpielService spielService;
@@ -48,5 +48,15 @@ public class SpielController {
     @PostMapping("/{spielId}/uhr/reset")
     public SpielStateDTO uhrReset(@PathVariable Long spielId) {
         return spielService.uhrReset(spielId);
+    }
+
+    @PutMapping("/{spielId}/uhr/setzen")
+    public SpielStateDTO uhrSetzen(@PathVariable Long spielId, @RequestBody SetZeitRequest request) {
+        return spielService.uhrSetzen(spielId, request.sekunden());
+    }
+
+    @PostMapping("/{spielId}/uhr/pause")
+    public SpielStateDTO pauseStarten(@PathVariable Long spielId, @RequestBody PauseRequest request) {
+        return spielService.pauseStarten(spielId, request.dauerSekunden());
     }
 }

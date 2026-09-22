@@ -45,6 +45,13 @@ public class SpielService {
                 .orElseThrow(() -> new IllegalArgumentException("Gastteam nicht gefunden: " + req.gastTeamId()));
 
         Spiel spiel = new Spiel(heim, gast);
+        if (req.anzahlHalbzeiten() != null) {
+            spiel.setAnzahlHalbzeiten(req.anzahlHalbzeiten());
+        }
+        if (req.halbzeitDauerSekunden() != null) {
+            spiel.setHalbzeitDauerSekunden(req.halbzeitDauerSekunden());
+            spiel.setRestzeitSekunden(req.halbzeitDauerSekunden());
+        }
         spielRepository.save(spiel);
         return toDto(spiel);
     }
@@ -73,6 +80,9 @@ public class SpielService {
 
         if (req.assistPlayerId() != null) {
             playerRepository.findById(req.assistPlayerId()).ifPresent(event::setAssistPlayer);
+        } else if (req.assistNameFreitext() != null && !req.assistNameFreitext().isBlank()) {
+            event.setAssistNameFreitext(req.assistNameFreitext());
+            event.setAssistNummerFreitext(req.assistNummerFreitext());
         }
 
         gameEventRepository.save(event);
@@ -140,6 +150,24 @@ public class SpielService {
                         ? spiel.getPausenDauerSekunden()
                         : spiel.getHalbzeitDauerSekunden()
         );
+        spielRepository.save(spiel);
+        return toDtoUndBroadcasten(spiel);
+    }
+
+    @Transactional
+    public SpielStateDTO uhrSetzen(Long spielId, int sekunden) {
+        Spiel spiel = findSpiel(spielId);
+        spiel.setRestzeitSekunden(Math.max(0, sekunden));
+        spielRepository.save(spiel);
+        return toDtoUndBroadcasten(spiel);
+    }
+
+    @Transactional
+    public SpielStateDTO pauseStarten(Long spielId, int dauerSekunden) {
+        Spiel spiel = findSpiel(spielId);
+        spiel.setPhase(Spielphase.PAUSE);
+        spiel.setRestzeitSekunden(dauerSekunden);
+        spiel.setLaeuft(true);
         spielRepository.save(spiel);
         return toDtoUndBroadcasten(spiel);
     }
