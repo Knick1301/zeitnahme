@@ -39,9 +39,6 @@ public class Spiel {
     @Enumerated(EnumType.STRING)
     private Spielphase phase = Spielphase.VOR_SPIEL;
 
-    // Getrennt von "phase": ob die Uhr GERADE tickt (Schiri kann z.B. innerhalb
-    // von LAUFEND kurz anhalten, ohne dass es gleich eine PAUSE zwischen den
-    // Halbzeiten ist)
     private boolean laeuft = false;
 
     private LocalDateTime datum = LocalDateTime.now();
@@ -57,4 +54,5 @@ public class Spiel {
         this.gastTeam = gastTeam;
         this.restzeitSekunden = this.halbzeitDauerSekunden;
     }
+
 }
