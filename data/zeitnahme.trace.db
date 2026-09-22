@@ -1,0 +1,8 @@
+2026-09-22 15:04:43.446524+02:00 jdbc[13]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax Fehler in SQL Befehl "[*]REST_SEKUNDEN"; erwartet "ROLLBACK, REVOKE, RUNSCRIPT, RELEASE, REFRESH"
+Syntax error in SQL statement "[*]REST_SEKUNDEN"; expected "ROLLBACK, REVOKE, RUNSCRIPT, RELEASE, REFRESH"; SQL statement:
+REST_SEKUNDEN [42001-224]
+2026-09-22 15:04:47.246852+02:00 jdbc[13]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax Fehler in SQL Befehl "[*]REST_SEKUNDEN"; erwartet "ROLLBACK, REVOKE, RUNSCRIPT, RELEASE, REFRESH"
+Syntax error in SQL statement "[*]REST_SEKUNDEN"; expected "ROLLBACK, REVOKE, RUNSCRIPT, RELEASE, REFRESH"; SQL statement:
+REST_SEKUNDEN [42001-224]

@@ -1,0 +1,13 @@
+# Maven Build-Output
+target/
+
+# H2-Datenbankdateien - lokale Testdaten gehoeren nicht ins Repo
+data/
+
+# IntelliJ
+.idea/
+*.iml
+
+# Sonstiges
+*.log
+.DS_Store
