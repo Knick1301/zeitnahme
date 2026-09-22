@@ -4,6 +4,8 @@ import de.student.zeitnahme.dto.*;
 import de.student.zeitnahme.service.SpielService;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/spiele")
 @CrossOrigin(origins = "*")
@@ -58,5 +60,10 @@ public class SpielController {
     @PostMapping("/{spielId}/uhr/pause")
     public SpielStateDTO pauseStarten(@PathVariable Long spielId, @RequestBody PauseRequest request) {
         return spielService.pauseStarten(spielId, request.dauerSekunden());
+    }
+
+    @GetMapping("/{spielId}/protokoll")
+    public List<GameEventDTO> protokoll(@PathVariable Long spielId) {
+        return spielService.protokoll(spielId);
     }
 }

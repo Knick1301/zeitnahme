@@ -21,8 +21,12 @@ public class Team {
     @Column(nullable = false)
     private String name;
 
-    // Pfad zu einer lokal abgelegten Datei, keine externe URL (Offline-Faehigkeit!)
     private String logoPfad;
+
+    @ElementCollection
+    @CollectionTable(name = "team_trainer", joinColumns = @JoinColumn(name = "team_id"))
+    @Column(name = "name")
+    private List<String> trainerNamen = new ArrayList<>();
 
     @OneToMany(mappedBy = "team", cascade = CascadeType.ALL)
     private List<Player> spieler = new ArrayList<>();

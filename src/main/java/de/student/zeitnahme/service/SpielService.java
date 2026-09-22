@@ -172,6 +172,12 @@ public class SpielService {
         return toDtoUndBroadcasten(spiel);
     }
 
+    public List<GameEventDTO> protokoll(Long spielId) {
+        return gameEventRepository.findBySpielIdOrderBySpielzeitSekundenAsc(spielId).stream()
+                .map(this::toEventDto)
+                .toList();
+    }
+
     private Spiel findSpiel(Long spielId) {
         return spielRepository.findById(spielId)
                 .orElseThrow(() -> new IllegalArgumentException("Spiel nicht gefunden: " + spielId));
@@ -241,5 +247,23 @@ public class SpielService {
         String name = p.getPlayer() != null ? p.getPlayer().getName() : p.getSpielerNameFreitext();
         Integer nummer = p.getPlayer() != null ? p.getPlayer().getNummer() : p.getSpielerNummerFreitext();
         return new SpielStateDTO.PenaltyInfo(p.getId(), name, nummer, p.getStrafenArt(), p.getRestSekunden());
+    }
+
+    private GameEventDTO toEventDto(GameEvent e) {
+        String spielerName = e.getPlayer() != null ? e.getPlayer().getName() : e.getSpielerNameFreitext();
+        Integer spielerNummer = e.getPlayer() != null ? e.getPlayer().getNummer() : e.getSpielerNummerFreitext();
+        String assistName = e.getAssistPlayer() != null ? e.getAssistPlayer().getName() : e.getAssistNameFreitext();
+        Integer assistNummer = e.getAssistPlayer() != null ? e.getAssistPlayer().getNummer() : e.getAssistNummerFreitext();
+        return new GameEventDTO(
+                e.getType().name(),
+                e.getTeam().getId(),
+                e.getTeam().getName(),
+                spielerName,
+                spielerNummer,
+                assistName,
+                assistNummer,
+                e.getPenaltyType() != null ? e.getPenaltyType().getName() : null,
+                e.getSpielzeitSekunden()
+        );
     }
 }

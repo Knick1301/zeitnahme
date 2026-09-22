@@ -37,6 +37,9 @@ public class StammdatenController {
         if (req.logoPfad() != null) {
             team.setLogoPfad(req.logoPfad());
         }
+        if (req.trainerNamen() != null) {
+            team.setTrainerNamen(req.trainerNamen());
+        }
         teamRepository.save(team);
         return toDto(team);
     }
@@ -53,6 +56,7 @@ public class StammdatenController {
                 t.getId(),
                 t.getName(),
                 t.getLogoPfad(),
+                t.getTrainerNamen(),
                 t.getSpieler().stream()
                         .map(p -> new TeamDTO.PlayerDTO(p.getId(), p.getName(), p.getNummer()))
                         .toList()

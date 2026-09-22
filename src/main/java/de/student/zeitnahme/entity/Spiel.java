@@ -31,8 +31,8 @@ public class Spiel {
     private int scoreGast = 0;
 
     private int periode = 1;
-    private int anzahlHalbzeiten = 2;
-    private int halbzeitDauerSekunden = 25 * 60;
+    private int anzahlHalbzeiten = 3;
+    private int halbzeitDauerSekunden = 20 * 60;
     private int pausenDauerSekunden = 10 * 60;
     private int restzeitSekunden;
 

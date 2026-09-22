@@ -1,4 +1,6 @@
 package de.student.zeitnahme.dto;
 
-public record UpdateTeamRequest(String name, String logoPfad) {
+import java.util.List;
+
+public record UpdateTeamRequest(String name, String logoPfad, List<String> trainerNamen) {
 }
