@@ -251,9 +251,9 @@ public class SpielService {
 
     private GameEventDTO toEventDto(GameEvent e) {
         String spielerName = e.getPlayer() != null ? e.getPlayer().getName() : e.getSpielerNameFreitext();
-        Integer spielerNummer = e.getPlayer() != null ? e.getPlayer().getNummer() : e.getSpielerNummerFreitext();
+        Integer spielerNummer = e.getPlayer() != null ? Integer.valueOf(e.getPlayer().getNummer()) : e.getSpielerNummerFreitext();
         String assistName = e.getAssistPlayer() != null ? e.getAssistPlayer().getName() : e.getAssistNameFreitext();
-        Integer assistNummer = e.getAssistPlayer() != null ? e.getAssistPlayer().getNummer() : e.getAssistNummerFreitext();
+        Integer assistNummer = e.getAssistPlayer() != null ? Integer.valueOf(e.getAssistPlayer().getNummer()) : e.getAssistNummerFreitext();
         return new GameEventDTO(
                 e.getType().name(),
                 e.getTeam().getId(),
