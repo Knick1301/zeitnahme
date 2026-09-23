@@ -41,10 +41,34 @@ public class GameClockService {
         for (Spiel spiel : laufendeSpiele) {
             tickEinzelnesSpiel(spiel);
         }
+
+        // Timeouts laufen unabhaengig von der (angehaltenen) Spieluhr ab
+        List<Spiel> spieleMitTimeout = spielRepository.findAll().stream()
+                .filter(s -> s.getTimeoutTeamId() != null)
+                .toList();
+
+        for (Spiel spiel : spieleMitTimeout) {
+            tickTimeout(spiel);
+        }
+    }
+
+    private void tickTimeout(Spiel spiel) {
+        int neu = spiel.getTimeoutRestSekunden() - 1;
+        if (neu > 0) {
+            spiel.setTimeoutRestSekunden(neu);
+        } else {
+            SpielService.timeoutBeenden(spiel);
+        }
+        spielRepository.save(spiel);
+        gameSocketHandler.broadcast(spiel.getId(), spielService.aktuellerStand(spiel.getId()));
     }
 
     private void tickEinzelnesSpiel(Spiel spiel) {
-        for (ActivePenalty strafe : activePenaltyRepository.findBySpielId(spiel.getId())) {
+        // Strafzeiten laufen nur mit der Spielzeit, nicht in der Pause
+        List<ActivePenalty> strafen = spiel.getPhase() == Spielphase.LAUFEND
+                ? activePenaltyRepository.findBySpielId(spiel.getId())
+                : List.of();
+        for (ActivePenalty strafe : strafen) {
             int neu = strafe.getRestSekunden() - 1;
             if (neu <= 0) {
                 activePenaltyRepository.delete(strafe);
@@ -79,6 +103,7 @@ public class GameClockService {
         } else if (spiel.getPhase() == Spielphase.PAUSE) {
             spiel.setPeriode(spiel.getPeriode() + 1);
             spiel.setPhase(Spielphase.LAUFEND);
+            SpielService.timeoutsAuffuellen(spiel);
             spiel.setRestzeitSekunden(spiel.getHalbzeitDauerSekunden());
         }
     }

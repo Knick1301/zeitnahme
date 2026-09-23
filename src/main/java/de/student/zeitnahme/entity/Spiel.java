@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.ColumnDefault;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -40,6 +41,21 @@ public class Spiel {
     private Spielphase phase = Spielphase.VOR_SPIEL;
 
     private boolean laeuft = false;
+
+    // Defaults auf DB-Ebene, damit bestehende Spiele beim Schema-Update gueltige Werte bekommen
+    @ColumnDefault("1")
+    private int timeoutsProPeriode = 1;
+    @ColumnDefault("30")
+    private int timeoutDauerSekunden = 30;
+    @ColumnDefault("1")
+    private int verbleibendeTimeoutsHeim = 1;
+    @ColumnDefault("1")
+    private int verbleibendeTimeoutsGast = 1;
+
+    // Team, das gerade einen Timeout nimmt (null = kein Timeout aktiv)
+    private Long timeoutTeamId;
+    @ColumnDefault("0")
+    private int timeoutRestSekunden = 0;
 
     private LocalDateTime datum = LocalDateTime.now();
 

@@ -62,6 +62,16 @@ public class SpielController {
         return spielService.pauseStarten(spielId, request.dauerSekunden());
     }
 
+    @PostMapping("/{spielId}/timeout")
+    public SpielStateDTO timeoutNehmen(@PathVariable Long spielId, @RequestBody TimeoutRequest request) {
+        return spielService.timeoutNehmen(spielId, request.teamId());
+    }
+
+    @PostMapping("/{spielId}/timeouts/zuruecksetzen")
+    public SpielStateDTO timeoutsZuruecksetzen(@PathVariable Long spielId) {
+        return spielService.timeoutsZuruecksetzen(spielId);
+    }
+
     @GetMapping("/{spielId}/protokoll")
     public List<GameEventDTO> protokoll(@PathVariable Long spielId) {
         return spielService.protokoll(spielId);

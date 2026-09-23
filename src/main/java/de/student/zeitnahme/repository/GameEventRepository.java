@@ -6,5 +6,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface GameEventRepository extends JpaRepository<GameEvent, Long> {
-    List<GameEvent> findBySpielIdOrderBySpielzeitSekundenAsc(Long spielId);
+    List<GameEvent> findBySpielIdOrderByPeriodeAscSpielzeitSekundenAscIdAsc(Long spielId);
 }

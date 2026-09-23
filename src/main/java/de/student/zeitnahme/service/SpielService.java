@@ -52,6 +52,14 @@ public class SpielService {
             spiel.setHalbzeitDauerSekunden(req.halbzeitDauerSekunden());
             spiel.setRestzeitSekunden(req.halbzeitDauerSekunden());
         }
+        if (req.timeoutsProPeriode() != null) {
+            spiel.setTimeoutsProPeriode(req.timeoutsProPeriode());
+            spiel.setVerbleibendeTimeoutsHeim(req.timeoutsProPeriode());
+            spiel.setVerbleibendeTimeoutsGast(req.timeoutsProPeriode());
+        }
+        if (req.timeoutDauerSekunden() != null) {
+            spiel.setTimeoutDauerSekunden(req.timeoutDauerSekunden());
+        }
         spielRepository.save(spiel);
         return toDto(spiel);
     }
@@ -75,12 +83,14 @@ public class SpielService {
         event.setType(EventType.GOAL);
         event.setSpiel(spiel);
         event.setTeam(team);
+        event.setPeriode(spiel.getPeriode());
         event.setSpielzeitSekunden(verstricheneSekunden(spiel));
         setzeSpieler(event, req.playerId(), req.spielerNameFreitext(), req.spielerNummerFreitext());
 
         if (req.assistPlayerId() != null) {
             playerRepository.findById(req.assistPlayerId()).ifPresent(event::setAssistPlayer);
-        } else if (req.assistNameFreitext() != null && !req.assistNameFreitext().isBlank()) {
+        } else if ((req.assistNameFreitext() != null && !req.assistNameFreitext().isBlank())
+                || req.assistNummerFreitext() != null) {
             event.setAssistNameFreitext(req.assistNameFreitext());
             event.setAssistNummerFreitext(req.assistNummerFreitext());
         }
@@ -102,6 +112,7 @@ public class SpielService {
         event.setSpiel(spiel);
         event.setTeam(team);
         event.setPenaltyType(penaltyType);
+        event.setPeriode(spiel.getPeriode());
         event.setSpielzeitSekunden(verstricheneSekunden(spiel));
         setzeSpieler(event, req.playerId(), req.spielerNameFreitext(), req.spielerNummerFreitext());
         gameEventRepository.save(event);
@@ -125,9 +136,14 @@ public class SpielService {
     @Transactional
     public SpielStateDTO uhrStart(Long spielId) {
         Spiel spiel = findSpiel(spielId);
+        if (spiel.getPhase() == Spielphase.BEENDET) {
+            throw new IllegalStateException("Das Spiel ist beendet");
+        }
         if (spiel.getPhase() == Spielphase.VOR_SPIEL) {
             spiel.setPhase(Spielphase.LAUFEND);
         }
+        // Wer die Uhr wieder startet, beendet einen laufenden Timeout vorzeitig
+        timeoutBeenden(spiel);
         spiel.setLaeuft(true);
         spielRepository.save(spiel);
         return toDtoUndBroadcasten(spiel);
@@ -172,8 +188,52 @@ public class SpielService {
         return toDtoUndBroadcasten(spiel);
     }
 
+    @Transactional
+    public SpielStateDTO timeoutNehmen(Long spielId, Long teamId) {
+        Spiel spiel = findSpiel(spielId);
+        Team team = teamDesSpiels(spiel, teamId);
+        if (spiel.isLaeuft()) {
+            throw new IllegalStateException("Timeout nur bei gestoppter Uhr moeglich");
+        }
+        if (spiel.getTimeoutTeamId() != null) {
+            throw new IllegalStateException("Es laeuft bereits ein Timeout");
+        }
+        boolean heim = team.getId().equals(spiel.getHeimTeam().getId());
+        int verbleibend = heim ? spiel.getVerbleibendeTimeoutsHeim() : spiel.getVerbleibendeTimeoutsGast();
+        if (verbleibend <= 0) {
+            throw new IllegalStateException("Keine Timeouts mehr fuer " + team.getName());
+        }
+        if (heim) {
+            spiel.setVerbleibendeTimeoutsHeim(verbleibend - 1);
+        } else {
+            spiel.setVerbleibendeTimeoutsGast(verbleibend - 1);
+        }
+        spiel.setTimeoutTeamId(team.getId());
+        spiel.setTimeoutRestSekunden(spiel.getTimeoutDauerSekunden());
+        spielRepository.save(spiel);
+        return toDtoUndBroadcasten(spiel);
+    }
+
+    @Transactional
+    public SpielStateDTO timeoutsZuruecksetzen(Long spielId) {
+        Spiel spiel = findSpiel(spielId);
+        timeoutsAuffuellen(spiel);
+        spielRepository.save(spiel);
+        return toDtoUndBroadcasten(spiel);
+    }
+
+    public static void timeoutsAuffuellen(Spiel spiel) {
+        spiel.setVerbleibendeTimeoutsHeim(spiel.getTimeoutsProPeriode());
+        spiel.setVerbleibendeTimeoutsGast(spiel.getTimeoutsProPeriode());
+    }
+
+    public static void timeoutBeenden(Spiel spiel) {
+        spiel.setTimeoutTeamId(null);
+        spiel.setTimeoutRestSekunden(0);
+    }
+
     public List<GameEventDTO> protokoll(Long spielId) {
-        return gameEventRepository.findBySpielIdOrderBySpielzeitSekundenAsc(spielId).stream()
+        return gameEventRepository.findBySpielIdOrderByPeriodeAscSpielzeitSekundenAscIdAsc(spielId).stream()
                 .map(this::toEventDto)
                 .toList();
     }
@@ -203,7 +263,11 @@ public class SpielService {
     }
 
     private int verstricheneSekunden(Spiel spiel) {
-        return spiel.getHalbzeitDauerSekunden() - spiel.getRestzeitSekunden();
+        // In der Pause zeigt die Uhr die Pausenzeit - Ereignisse zaehlen zum Ende der abgelaufenen Periode
+        if (spiel.getPhase() == Spielphase.PAUSE) {
+            return spiel.getHalbzeitDauerSekunden();
+        }
+        return Math.max(0, spiel.getHalbzeitDauerSekunden() - spiel.getRestzeitSekunden());
     }
 
     private SpielStateDTO toDtoUndBroadcasten(Spiel spiel) {
@@ -235,7 +299,13 @@ public class SpielService {
                 spiel.isLaeuft(),
                 spiel.getRestzeitSekunden(),
                 strafenHeim,
-                strafenGast
+                strafenGast,
+                spiel.getTimeoutsProPeriode(),
+                spiel.getTimeoutDauerSekunden(),
+                spiel.getVerbleibendeTimeoutsHeim(),
+                spiel.getVerbleibendeTimeoutsGast(),
+                spiel.getTimeoutTeamId(),
+                spiel.getTimeoutRestSekunden()
         );
     }
 
@@ -245,7 +315,7 @@ public class SpielService {
 
     private SpielStateDTO.PenaltyInfo toPenaltyInfo(ActivePenalty p) {
         String name = p.getPlayer() != null ? p.getPlayer().getName() : p.getSpielerNameFreitext();
-        Integer nummer = p.getPlayer() != null ? p.getPlayer().getNummer() : p.getSpielerNummerFreitext();
+        Integer nummer = p.getPlayer() != null ? Integer.valueOf(p.getPlayer().getNummer()) : p.getSpielerNummerFreitext();
         return new SpielStateDTO.PenaltyInfo(p.getId(), name, nummer, p.getStrafenArt(), p.getRestSekunden());
     }
 
@@ -263,6 +333,8 @@ public class SpielService {
                 assistName,
                 assistNummer,
                 e.getPenaltyType() != null ? e.getPenaltyType().getName() : null,
+                e.getPenaltyType() != null ? Integer.valueOf(e.getPenaltyType().getDauerSekunden()) : null,
+                e.getPeriode(),
                 e.getSpielzeitSekunden()
         );
     }

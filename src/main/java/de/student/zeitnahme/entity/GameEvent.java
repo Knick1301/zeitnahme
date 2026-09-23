@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.ColumnDefault;
 
 @Entity
 @Getter
@@ -42,6 +43,9 @@ public class GameEvent {
     @ManyToOne
     @JoinColumn(name = "penalty_type_id")
     private PenaltyType penaltyType;
+
+    @ColumnDefault("1")
+    private int periode = 1;
 
     private int spielzeitSekunden;
 }

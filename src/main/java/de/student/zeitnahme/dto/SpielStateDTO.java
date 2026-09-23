@@ -21,7 +21,13 @@ public record SpielStateDTO(
         boolean laeuft,
         int restzeitSekunden,
         List<PenaltyInfo> laufendeStrafenHeim,
-        List<PenaltyInfo> laufendeStrafenGast
+        List<PenaltyInfo> laufendeStrafenGast,
+        int timeoutsProPeriode,
+        int timeoutDauerSekunden,
+        int verbleibendeTimeoutsHeim,
+        int verbleibendeTimeoutsGast,
+        Long timeoutTeamId,
+        int timeoutRestSekunden
 ) {
     public record TeamInfo(Long id, String name, String logoPfad) {
     }

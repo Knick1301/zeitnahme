@@ -9,6 +9,8 @@ public record GameEventDTO(
         String assistName,
         Integer assistNummer,
         String strafenArt,
+        Integer strafenDauerSekunden,
+        int periode,
         int spielzeitSekunden
 ) {
 }
