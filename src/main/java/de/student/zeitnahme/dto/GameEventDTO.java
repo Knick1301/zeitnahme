@@ -1,6 +1,7 @@
 package de.student.zeitnahme.dto;
 
 public record GameEventDTO(
+        Long id,
         String type,
         Long teamId,
         String teamName,

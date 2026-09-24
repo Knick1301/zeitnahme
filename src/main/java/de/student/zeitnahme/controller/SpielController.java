@@ -72,6 +72,16 @@ public class SpielController {
         return spielService.timeoutsZuruecksetzen(spielId);
     }
 
+    @DeleteMapping("/{spielId}/ereignisse/{ereignisId}")
+    public SpielStateDTO ereignisLoeschen(@PathVariable Long spielId, @PathVariable Long ereignisId) {
+        return spielService.ereignisLoeschen(spielId, ereignisId);
+    }
+
+    @DeleteMapping("/{spielId}/strafen/{strafeId}")
+    public SpielStateDTO strafeBeenden(@PathVariable Long spielId, @PathVariable Long strafeId) {
+        return spielService.strafeBeenden(spielId, strafeId);
+    }
+
     @GetMapping("/{spielId}/protokoll")
     public List<GameEventDTO> protokoll(@PathVariable Long spielId) {
         return spielService.protokoll(spielId);

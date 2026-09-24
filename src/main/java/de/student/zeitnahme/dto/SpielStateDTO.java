@@ -37,7 +37,8 @@ public record SpielStateDTO(
             String spielerName,
             Integer spielerNummer,
             String strafenArt,
-            int restSekunden
+            int restSekunden,
+            int dauerSekunden
     ) {
     }
 }
